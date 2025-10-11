@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <style>
+        /* نفس الستايل السابق */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -123,6 +124,14 @@
             font-size: 0.9rem;
             display: none;
         }
+
+        .auth-check {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -131,17 +140,27 @@
         <h1>أدخل اسمك</h1>
         <p>من فضلك أدخل اسمك الشخصي للمتابعة</p>
         
-        <div class="form-group">
-            <label for="userName">الاسم الشخصي</label>
-            <input type="text" id="userName" placeholder="أدخل اسمك هنا..." required>
-            <div id="nameError" class="error">الرجاء إدخال اسم صحيح</div>
+        <div id="authCheck" class="auth-check">
+            جاري التحقق من المصادقة...
         </div>
         
-        <button id="saveName" class="btn">حفظ والمتابعة</button>
+        <div id="mainContent" style="display: none;">
+            <div class="form-group">
+                <label for="userName">الاسم الشخصي</label>
+                <input type="text" id="userName" placeholder="أدخل اسمك هنا..." required>
+                <div id="nameError" class="error">الرجاء إدخال اسم صحيح</div>
+            </div>
+            
+            <button id="saveName" class="btn">حفظ والمتابعة</button>
+        </div>
         
         <div id="loading" class="loading">
             <div class="spinner"></div>
             <p style="margin-top: 15px;">جاري الحفظ...</p>
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none; margin-top: 20px;">
+            خطأ في المصادقة. يرجى <a href="google.html">تسجيل الدخول مرة أخرى</a>.
         </div>
     </div>
 
@@ -163,10 +182,18 @@
 
         // التحقق من تسجيل الدخول
         auth.onAuthStateChanged(async (user) => {
+            const authCheck = document.getElementById('authCheck');
+            const mainContent = document.getElementById('mainContent');
+            const errorMessage = document.getElementById('errorMessage');
+
             if (!user) {
-                window.location.href = 'google.html';
+                authCheck.innerHTML = '❌ لم يتم تسجيل الدخول';
+                errorMessage.style.display = 'block';
                 return;
             }
+
+            authCheck.innerHTML = `✅ تم تسجيل الدخول كـ: ${user.email}`;
+            mainContent.style.display = 'block';
 
             document.getElementById('saveName').addEventListener('click', async () => {
                 const userName = document.getElementById('userName').value.trim();
@@ -204,7 +231,7 @@
         });
 
         // السماح بالضغط على Enter
-        document.getElementById('userName').addEventListener('keypress', function(e) {
+        document.getElementById('userName')?.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 document.getElementById('saveName').click();
             }
