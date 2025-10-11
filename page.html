@@ -1,1 +1,51 @@
 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحميل الملف</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="card download-card">
+            <h1 id="pageTitle">تحميل الملف</h1>
+            <div id="fileInfo">
+                <!-- سيتم عرض معلومات الملف هنا -->
+            </div>
+            <button id="downloadBtn" class="btn-primary">تثبيت الملف</button>
+            <div id="countdown" class="countdown" style="display: none;">
+                <span id="countdownText">جاري التجهيز: <span id="countdownNumber">10</span> ثانية</span>
+            </div>
+            <div id="message" class="message"></div>
+            <div id="loginMessage" class="message" style="display: none;">
+                <p>يجب تسجيل الدخول لتحميل الملف. <a href="google.html">سجل الدخول الآن</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageSlug = urlParams.get('slug');
+        let pageData = null;
+        let countdownInterval = null;
+
+        // التحقق من حالة المستخدم
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                document.getElementById('loginMessage').style.display = 'block';
+                document.getElementById('downloadBtn').style.display = 'none';
+            } else {
+                document.getElementById('loginMessage').style.display = 'none';
+                document.getElementById('downloadBtn').style.display = 'block';
+            }
+        });
+
+        // تحميل بيانات الصفحة
+        if (pageSlug) {
+            database.ref('pages/' + pageSlug).once('value').
