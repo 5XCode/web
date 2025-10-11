@@ -72,6 +72,19 @@
             color: #666;
             margin-top: 20px;
         }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -84,10 +97,13 @@
 
         <input type="text" id="userName" placeholder="اسمك الشخصي">
         
-        <button onclick="saveUserName()">متابعة</button>
+        <button onclick="saveUserName()">متابعة إلى الصفحة الرئيسية</button>
         <button class="logout" onclick="signOut()">تسجيل الخروج</button>
         
-        <div class="loading" id="loading">جاري الحفظ...</div>
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            جاري التحميل...
+        </div>
     </div>
 
     <script>
@@ -105,15 +121,22 @@
 
         let currentUser = null;
 
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('userEmail').textContent = user.email;
-                checkIfUserNameExists(user.uid);
-            } else {
-                window.location.href = 'google.html';
-            }
-        });
+        // إظهار شاشة التحميل لمدة 2 ثانية
+        document.getElementById('loading').style.display = 'block';
+        
+        setTimeout(() => {
+            firebase.auth().onAuthStateChanged((user) => {
+                document.getElementById('loading').style.display = 'none';
+                
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('userEmail').textContent = user.email;
+                    checkIfUserNameExists(user.uid);
+                } else {
+                    window.location.href = 'google.html';
+                }
+            });
+        }, 2000);
 
         function checkIfUserNameExists(userId) {
             const db = firebase.database();
@@ -138,10 +161,13 @@
             db.ref('users/' + currentUser.uid).update({
                 name: userName,
                 email: currentUser.email,
-                createdAt: firebase.database.ServerValue.TIMESTAMP
+                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                banned: false // إضافة حقل banned تلقائياً
             })
             .then(() => {
-                window.location.href = 'index.html';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
             })
             .catch((error) => {
                 alert('خطأ في الحفظ: ' + error.message);
@@ -150,6 +176,7 @@
         }
 
         function signOut() {
+            document.getElementById('loading').style.display = 'block';
             firebase.auth().signOut()
                 .then(() => {
                     window.location.href = 'google.html';
