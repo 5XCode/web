@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -30,41 +29,43 @@
         }
         h1 {
             color: #333;
-            margin-bottom: 10px;
-        }
-        .page-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
             margin-bottom: 20px;
         }
         button {
             background: #28a745;
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 5px;
-            font-size: 16px;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
             cursor: pointer;
             width: 100%;
             margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        button:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-2px);
         }
         button:disabled {
             background: #6c757d;
             cursor: not-allowed;
+            transform: none;
         }
         .countdown {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
-            margin: 15px 0;
+            margin: 20px 0;
             color: #333;
+            height: 40px;
         }
         .progress {
             width: 100%;
             height: 10px;
             background: #e9ecef;
             border-radius: 5px;
-            margin: 15px 0;
+            margin: 20px 0;
             overflow: hidden;
         }
         .progress-bar {
@@ -89,28 +90,33 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-        .stats {
-            margin-top: 20px;
-            padding: 10px;
-            background: #e9ecef;
-            border-radius: 5px;
+        .download-step {
+            display: none;
+        }
+        .step2-btn {
+            background: #dc3545;
+            font-size: 16px;
+            padding: 15px 30px;
+        }
+        .step2-btn:hover:not(:disabled) {
+            background: #c82333;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>تحميل الملف</h1>
+        <h1>تثبيت الملف</h1>
         
-        <div class="page-info">
-            <div id="pageName">جاري التحميل...</div>
-            <div id="pageCreator" style="color: #666; font-size: 14px; margin-top: 5px;">بواسطة: ...</div>
+        <div class="download-step" id="step1">
+            <button id="downloadBtn" onclick="startCountdown()">تثبيت الملف</button>
         </div>
 
-        <button id="downloadBtn" onclick="startDownload()">بدء التثبيت</button>
-        
-        <div class="countdown" id="countdown"></div>
-        <div class="progress">
-            <div class="progress-bar" id="progressBar"></div>
+        <div class="download-step" id="step2">
+            <div class="countdown" id="countdown"></div>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <button class="step2-btn" id="installBtn" onclick="startDownload()" disabled>اضغط للتثبيت</button>
         </div>
         
         <div class="message success" id="successMessage">
@@ -119,10 +125,6 @@
         
         <div class="message error" id="errorMessage">
             ❌ حدث خطأ
-        </div>
-
-        <div class="stats">
-            <div id="viewsCount">👁️ الزيارات: 0</div>
         </div>
     </div>
 
@@ -140,7 +142,12 @@
         firebase.initializeApp(firebaseConfig);
 
         let pageData = null;
+        let currentPageId = null;
+        let currentUserId = null;
         let hasCountedView = false;
+
+        // إظهار الخطوة الأولى
+        document.getElementById('step1').style.display = 'block';
 
         function getPageNameFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -162,7 +169,11 @@
                     Object.keys(userData.links).forEach((linkId) => {
                         const link = userData.links[linkId];
                         if (link.pageName === pageName) {
-                            foundData = { page: link, userId: userId, linkId: linkId };
+                            foundData = { 
+                                page: link, 
+                                userId: userId, 
+                                linkId: linkId 
+                            };
                         }
                     });
                 }
@@ -171,21 +182,55 @@
             return foundData;
         }
 
-        function updateViewCount(userId, linkId) {
+        function generateVisitorId() {
+            return 'visitor_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
+
+        function getVisitorId() {
+            let visitorId = localStorage.getItem('visitor_id');
+            if (!visitorId) {
+                visitorId = generateVisitorId();
+                localStorage.setItem('visitor_id', visitorId);
+            }
+            return visitorId;
+        }
+
+        async function updateViewCount(userId, linkId) {
             if (hasCountedView) return;
             
+            const visitorId = getVisitorId();
             const db = firebase.database();
-            const linkRef = db.ref(`users/${userId}/links/${linkId}`);
+            const viewRef = db.ref(`users/${userId}/links/${linkId}/visitors/${visitorId}`);
             
-            linkRef.transaction((currentData) => {
-                if (currentData) {
-                    currentData.views = (currentData.views || 0) + 1;
-                    document.getElementById('viewsCount').textContent = `👁️ الزيارات: ${currentData.views}`;
-                }
-                return currentData;
-            });
+            // التحقق إذا كان هذا الزائر قد ضغط على التثبيت من قبل
+            const snapshot = await viewRef.once('value');
+            
+            if (!snapshot.exists()) {
+                // زيادة عدد المشاهدات فقط إذا لم يضغط من قبل
+                const linkRef = db.ref(`users/${userId}/links/${linkId}`);
+                linkRef.transaction((currentData) => {
+                    if (currentData) {
+                        currentData.views = (currentData.views || 0) + 1;
+                    }
+                    return currentData;
+                });
+                
+                // تسجيل أن هذا الزائر قد زار الصفحة
+                viewRef.set({
+                    visited: true,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
             
             hasCountedView = true;
+        }
+
+        async function markAsClicked(userId, linkId) {
+            const visitorId = getVisitorId();
+            const db = firebase.database();
+            const clickRef = db.ref(`users/${userId}/links/${linkId}/visitors/${visitorId}/clicked`);
+            
+            await clickRef.set(true);
         }
 
         async function loadPageData() {
@@ -195,8 +240,6 @@
                 return;
             }
 
-            document.getElementById('pageName').textContent = pageName;
-
             try {
                 const result = await findPageData(pageName);
                 if (!result) {
@@ -205,29 +248,23 @@
                 }
 
                 pageData = result.page;
-
-                const userRef = firebase.database().ref(`users/${result.userId}`);
-                const userSnapshot = await userRef.once('value');
-                const userData = userSnapshot.val();
-                
-                if (userData && userData.name) {
-                    document.getElementById('pageCreator').textContent = `بواسطة: ${userData.name}`;
-                }
-
-                document.getElementById('viewsCount').textContent = `👁️ الزيارات: ${pageData.views || 0}`;
-                updateViewCount(result.userId, result.linkId);
+                currentPageId = result.linkId;
+                currentUserId = result.userId;
 
             } catch (error) {
                 showError('خطأ في تحميل الصفحة');
             }
         }
 
-        function startDownload() {
-            const btn = document.getElementById('downloadBtn');
+        function startCountdown() {
+            // إخفاء الخطوة الأولى وإظهار الخطوة الثانية
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+            
             const countdown = document.getElementById('countdown');
             const progress = document.getElementById('progressBar');
+            const installBtn = document.getElementById('installBtn');
             
-            btn.disabled = true;
             let seconds = 10;
             
             const timer = setInterval(() => {
@@ -236,16 +273,23 @@
                 
                 if (seconds === 0) {
                     clearInterval(timer);
-                    processDownload();
+                    installBtn.disabled = false;
+                    installBtn.textContent = 'اضغط للتثبيت الآن';
                 }
                 seconds--;
             }, 1000);
         }
 
-        async function processDownload() {
+        async function startDownload() {
+            document.getElementById('installBtn').disabled = true;
             document.getElementById('successMessage').style.display = 'block';
 
             try {
+                // تسجيل أن المستخدم ضغط على التثبيت
+                if (currentUserId && currentPageId) {
+                    await markAsClicked(currentUserId, currentPageId);
+                }
+
                 if (!pageData?.originalUrl) {
                     throw new Error('لا يوجد رابط تحميل');
                 }
@@ -264,9 +308,7 @@
 
             } catch (error) {
                 showError(error.message);
-                document.getElementById('downloadBtn').disabled = false;
-                document.getElementById('countdown').textContent = '';
-                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('installBtn').disabled = false;
                 document.getElementById('successMessage').style.display = 'none';
             }
         }
@@ -277,7 +319,15 @@
             errorElement.style.display = 'block';
         }
 
-        window.addEventListener('load', loadPageData);
+        // عند تحميل الصفحة
+        window.addEventListener('load', async () => {
+            await loadPageData();
+            
+            // تحديث عدد المشاهدات عندما يضغط المستخدم على التثبيت في الخطوة الأولى
+            if (currentUserId && currentPageId) {
+                await updateViewCount(currentUserId, currentPageId);
+            }
+        });
     </script>
 </body>
 </html>
