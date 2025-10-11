@@ -1,1 +1,283 @@
 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحميل الملف</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .page-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .countdown {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #333;
+        }
+        .progress {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #28a745;
+            transition: width 1s linear;
+        }
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .stats {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>تحميل الملف</h1>
+        
+        <div class="page-info">
+            <div id="pageName">جاري التحميل...</div>
+            <div id="pageCreator" style="color: #666; font-size: 14px; margin-top: 5px;">بواسطة: ...</div>
+        </div>
+
+        <button id="downloadBtn" onclick="startDownload()">بدء التثبيت</button>
+        
+        <div class="countdown" id="countdown"></div>
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="message success" id="successMessage">
+            ✅ جاري التحميل...
+        </div>
+        
+        <div class="message error" id="errorMessage">
+            ❌ حدث خطأ
+        </div>
+
+        <div class="stats">
+            <div id="viewsCount">👁️ الزيارات: 0</div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBzB4Hky2iO8FGe_sRz3EfjAfyy4ClgLGQ",
+            authDomain: "marvel-75d8b.firebasestorage.app",
+            databaseURL: "https://marvel-75d8b-default-rtdb.firebaseio.com",
+            projectId: "marvel-75d8b",
+            storageBucket: "marvel-75d8b.firebasestorage.app",
+            messagingSenderId: "1098663412275",
+            appId: "1:1098663412275:android:5cdc145765a20130189946"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+
+        let pageData = null;
+        let hasCountedView = false;
+
+        function getPageNameFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('page');
+        }
+
+        async function findPageData(pageName) {
+            const db = firebase.database();
+            const usersRef = db.ref('users');
+            
+            const snapshot = await usersRef.once('value');
+            let foundData = null;
+
+            snapshot.forEach((userSnapshot) => {
+                const userId = userSnapshot.key;
+                const userData = userSnapshot.val();
+                
+                if (userData.links) {
+                    Object.keys(userData.links).forEach((linkId) => {
+                        const link = userData.links[linkId];
+                        if (link.pageName === pageName) {
+                            foundData = { page: link, userId: userId, linkId: linkId };
+                        }
+                    });
+                }
+            });
+
+            return foundData;
+        }
+
+        function updateViewCount(userId, linkId) {
+            if (hasCountedView) return;
+            
+            const db = firebase.database();
+            const linkRef = db.ref(`users/${userId}/links/${linkId}`);
+            
+            linkRef.transaction((currentData) => {
+                if (currentData) {
+                    currentData.views = (currentData.views || 0) + 1;
+                    document.getElementById('viewsCount').textContent = `👁️ الزيارات: ${currentData.views}`;
+                }
+                return currentData;
+            });
+            
+            hasCountedView = true;
+        }
+
+        async function loadPageData() {
+            const pageName = getPageNameFromURL();
+            if (!pageName) {
+                showError('الصفحة غير موجودة');
+                return;
+            }
+
+            document.getElementById('pageName').textContent = pageName;
+
+            try {
+                const result = await findPageData(pageName);
+                if (!result) {
+                    showError('الصفحة غير موجودة');
+                    return;
+                }
+
+                pageData = result.page;
+
+                const userRef = firebase.database().ref(`users/${result.userId}`);
+                const userSnapshot = await userRef.once('value');
+                const userData = userSnapshot.val();
+                
+                if (userData && userData.name) {
+                    document.getElementById('pageCreator').textContent = `بواسطة: ${userData.name}`;
+                }
+
+                document.getElementById('viewsCount').textContent = `👁️ الزيارات: ${pageData.views || 0}`;
+                updateViewCount(result.userId, result.linkId);
+
+            } catch (error) {
+                showError('خطأ في تحميل الصفحة');
+            }
+        }
+
+        function startDownload() {
+            const btn = document.getElementById('downloadBtn');
+            const countdown = document.getElementById('countdown');
+            const progress = document.getElementById('progressBar');
+            
+            btn.disabled = true;
+            let seconds = 10;
+            
+            const timer = setInterval(() => {
+                countdown.textContent = seconds;
+                progress.style.width = `${100 - (seconds * 10)}%`;
+                
+                if (seconds === 0) {
+                    clearInterval(timer);
+                    processDownload();
+                }
+                seconds--;
+            }, 1000);
+        }
+
+        async function processDownload() {
+            document.getElementById('successMessage').style.display = 'block';
+
+            try {
+                if (!pageData?.originalUrl) {
+                    throw new Error('لا يوجد رابط تحميل');
+                }
+
+                const apiUrl = `https://script.google.com/macros/s/AKfycbzlpPlYUeDgsaq0Gb6A6Yxj78E0E7LZbQ3en6hIhIvPrax1URjCeIZ2ptV1mrYlYahC5w/exec?url=${encodeURIComponent(pageData.originalUrl)}`;
+                const response = await fetch(apiUrl);
+                const result = await response.text();
+
+                if (result.includes('发生错误，请联系开发者 KIMO')) {
+                    throw new Error('الرابط غير صالح');
+                }
+
+                setTimeout(() => {
+                    window.location.href = result;
+                }, 2000);
+
+            } catch (error) {
+                showError(error.message);
+                document.getElementById('downloadBtn').disabled = false;
+                document.getElementById('countdown').textContent = '';
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('successMessage').style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.innerHTML = `❌ ${message}`;
+            errorElement.style.display = 'block';
+        }
+
+        window.addEventListener('load', loadPageData);
+    </script>
+</body>
+</html>
