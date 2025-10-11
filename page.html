@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -48,4 +47,131 @@
 
         // تحميل بيانات الصفحة
         if (pageSlug) {
-            database.ref('pages/' + pageSlug).once('value').
+            database.ref('pages/' + pageSlug).once('value').then((snapshot) => {
+                if (!snapshot.exists()) {
+                    document.getElementById('message').textContent = 'الصفحة غير موجودة';
+                    return;
+                }
+                
+                pageData = snapshot.val();
+                document.getElementById('pageTitle').textContent = `تحميل ${pageSlug}`;
+                
+                // عرض معلومات الملف
+                document.getElementById('fileInfo').innerHTML = `
+                    <p><strong>تم إنشاء هذه الصفحة بواسطة:</strong> ${pageData.ownerName}</p>
+                    <p><strong>عدد مرات التحميل:</strong> ${pageData.views}</p>
+                `;
+            }).catch((error) => {
+                document.getElementById('message').textContent = 'حدث خطأ في تحميل الصفحة';
+                console.error('Error:', error);
+            });
+        } else {
+            document.getElementById('message').textContent = 'رابط الصفحة غير صحيح';
+        }
+
+        // معالج زر التحميل
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                document.getElementById('message').textContent = 'يجب تسجيل الدخول أولاً';
+                return;
+            }
+            
+            if (!pageData) {
+                document.getElementById('message').textContent = 'بيانات الصفحة غير متوفرة';
+                return;
+            }
+            
+            // التحقق إذا كان المستخدم قد حمل الملف من قبل
+            const viewRef = database.ref('pageViews/' + pageSlug + '/' + user.uid);
+            const viewSnapshot = await viewRef.once('value');
+            
+            let shouldIncrementViews = false;
+            
+            if (!viewSnapshot.exists()) {
+                // زيادة العداد إذا كان أول مرة
+                await viewRef.set(true);
+                shouldIncrementViews = true;
+            }
+            
+            // بدء العد التنازلي
+            startCountdown(shouldIncrementViews);
+        });
+
+        // دالة العد التنازلي
+        function startCountdown(shouldIncrementViews) {
+            let countdown = 10;
+            const countdownDiv = document.getElementById('countdown');
+            const countdownNumber = document.getElementById('countdownNumber');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            downloadBtn.disabled = true;
+            countdownDiv.style.display = 'block';
+            countdownNumber.textContent = countdown;
+            
+            countdownInterval = setInterval(() => {
+                countdown--;
+                countdownNumber.textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownDiv.style.display = 'none';
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = 'انقر للتثبيت مرة أخرى';
+                    
+                    // زيادة العداد إذا لزم
+                    if (shouldIncrementViews) {
+                        incrementViews();
+                    }
+                    
+                    // بدء التحميل
+                    initiateDownload();
+                }
+            }, 1000);
+        }
+
+        // دالة زيادة عدد المشاهدات
+        async function incrementViews() {
+            const newViews = pageData.views + 1;
+            
+            // تحديث في الصفحات العامة
+            await database.ref('pages/' + pageSlug).update({ views: newViews });
+            
+            // تحديث في بيانات المستخدم
+            await database.ref('users/' + pageData.owner + '/links').once('value').then((snapshot) => {
+                snapshot.forEach((childSnapshot) => {
+                    const link = childSnapshot.val();
+                    if (link.page_slug === pageSlug) {
+                        database.ref('users/' + pageData.owner + '/links/' + childSnapshot.key).update({
+                            views: newViews
+                        });
+                    }
+                });
+            });
+            
+            // تحديث البيانات المحلية
+            pageData.views = newViews;
+            document.getElementById('fileInfo').innerHTML = `
+                <p><strong>تم إنشاء هذه الصفحة بواسطة:</strong> ${pageData.ownerName}</p>
+                <p><strong>عدد مرات التحميل:</strong> ${pageData.views}</p>
+            `;
+        }
+
+        // دالة بدء التحميل
+        function initiateDownload() {
+            if (!pageData || !pageData.direct_link) {
+                document.getElementById('message').textContent = 'رابط التحميل غير متوفر';
+                return;
+            }
+            
+            // استخدام الرابط المباشر من API
+            const downloadUrl = pageData.direct_link;
+            
+            // فتح الرابط في نافذة جديدة للتحميل
+            window.open(downloadUrl, '_blank');
+            
+            document.getElementById('message').textContent = 'جاري بدء التحميل...';
+        }
+    </script>
+</body>
+</html>
