@@ -3,135 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الصفحة الرئيسية</title>
+    <title>لوحة التحكم - MediaFire Downloader</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f0f2f5;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
         }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
         .header {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
         }
         .user-info h2 {
-            margin: 0;
             color: #333;
+            margin-bottom: 5px;
         }
         .user-info p {
-            margin: 5px 0 0 0;
             color: #666;
+            font-size: 14px;
         }
-        .logout {
+        .logout-btn {
             background: #dc3545;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 25px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
         }
         .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        .card-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .input-group {
             margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
         }
         input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
             font-size: 16px;
+            transition: border-color 0.3s ease;
         }
-        button {
-            background: #007bff;
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .check-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 5px;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s ease;
             width: 100%;
+            margin-bottom: 20px;
         }
-        button:hover {
-            background: #0056b3;
+        .check-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
         .result {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 5px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
             display: none;
         }
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .result.success {
+            border-right: 4px solid #28a745;
         }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .result.error {
+            border-right: 4px solid #dc3545;
+        }
+        .links-list {
+            max-height: 500px;
+            overflow-y: auto;
         }
         .link-item {
             background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            border-right: 4px solid #007bff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-right: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        .link-item:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
         .link-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
+            align-items: center;
+            margin-bottom: 10px;
         }
         .link-name {
             font-weight: bold;
+            color: #333;
+            font-size: 18px;
         }
         .link-views {
-            background: #6c757d;
+            background: #667eea;
             color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 12px;
+            font-weight: 600;
         }
         .link-url {
             color: #666;
             font-size: 14px;
             word-break: break-all;
             margin-bottom: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
         }
         .link-date {
             color: #999;
             font-size: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .link-actions {
+            display: flex;
+            gap: 10px;
         }
         .link-actions button {
-            width: auto;
-            padding: 5px 10px;
-            margin-right: 5px;
-            font-size: 12px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
         }
-        .copy-btn { background: #28a745; }
-        .view-btn { background: #17a2b8; }
+        .copy-btn {
+            background: #28a745;
+            color: white;
+        }
+        .view-btn {
+            background: #17a2b8;
+            color: white;
+        }
+        .copy-btn:hover, .view-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
         .loading {
             text-align: center;
             color: #666;
             margin: 20px 0;
         }
-        .loading-spinner {
+        .spinner {
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
+            border-top: 3px solid #667eea;
             border-radius: 50%;
             width: 30px;
             height: 30px;
@@ -142,36 +250,58 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+        }
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="user-info">
-            <h2 id="userName">جاري التحميل...</h2>
-            <p id="userEmail">جاري التحميل...</p>
+    <div class="container">
+        <div class="header">
+            <div class="user-section">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-info">
+                    <h2 id="userName">جاري التحميل...</h2>
+                    <p id="userEmail">جاري التحميل...</p>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="signOut()">تسجيل الخروج</button>
         </div>
-        <button class="logout" onclick="signOut()">تسجيل الخروج</button>
-    </div>
 
-    <div class="card">
-        <h3>فحص رابط MediaFire</h3>
-        <input type="url" id="mediafireUrl" placeholder="https://www.mediafire.com/...">
-        <button onclick="checkMediaFireUrl()">فحص الرابط</button>
-        
-        <div class="loading" id="checkLoading" style="display: none;">
-            <div class="loading-spinner"></div>
-            جاري فحص الرابط...
-        </div>
-        
-        <div class="result" id="checkResult"></div>
-    </div>
+        <div class="main-content">
+            <div class="card">
+                <div class="card-title">🔗 فحص رابط MediaFire</div>
+                
+                <div class="input-group">
+                    <label for="mediafireUrl">رابط MediaFire:</label>
+                    <input type="url" id="mediafireUrl" placeholder="https://www.mediafire.com/..." />
+                </div>
 
-    <div class="card">
-        <h3>روابطي المنشورة</h3>
-        <div id="linksList">
-            <div class="loading" id="linksLoading">
-                <div class="loading-spinner"></div>
-                جاري تحميل الروابط...
+                <button class="check-btn" onclick="checkMediaFireUrl()">فحص الرابط</button>
+
+                <div class="loading" id="checkLoading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>جاري فحص الرابط...</p>
+                </div>
+
+                <div class="result" id="checkResult"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📊 روابطي المنشورة</div>
+                <div class="links-list" id="linksList">
+                    <div class="loading" id="linksLoading">
+                        <div class="spinner"></div>
+                        <p>جاري تحميل الروابط...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -192,13 +322,11 @@
         let currentUser = null;
         let userName = '';
 
-        // إظهار شاشة التحميل
-        document.getElementById('linksLoading').style.display = 'block';
-
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
                 currentUser = user;
                 document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
                 loadUserData(user.uid);
                 loadUserLinks(user.uid);
             } else {
@@ -217,6 +345,9 @@
                     } else {
                         window.location.href = 'name.html';
                     }
+                })
+                .catch((error) => {
+                    console.error('Error loading user data:', error);
                 });
         }
 
@@ -226,10 +357,18 @@
             
             linksRef.on('value', (snapshot) => {
                 const linksList = document.getElementById('linksList');
-                document.getElementById('linksLoading').style.display = 'none';
+                const linksLoading = document.getElementById('linksLoading');
+                
+                linksLoading.style.display = 'none';
                 
                 if (!snapshot.exists()) {
-                    linksList.innerHTML = '<p style="text-align: center; color: #666;">لا توجد روابط منشورة</p>';
+                    linksList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📁</div>
+                            <p>لا توجد روابط منشورة بعد</p>
+                            <p style="font-size: 14px; margin-top: 10px;">ابدأ بفحص رابط MediaFire لإنشاء أول رابط لك</p>
+                        </div>
+                    `;
                     return;
                 }
 
@@ -238,8 +377,8 @@
                 
                 Object.keys(links).forEach((linkId) => {
                     const link = links[linkId];
-                    const fullPageUrl = window.location.origin + '/page.html?page=' + link.pageName;
-                    const createDate = link.createdAt ? formatDate(link.createdAt) : 'غير معروف';
+                    const fullPageUrl = window.location.origin + '/download.html?page=' + link.pageName;
+                    const createDate = link.createdAt ? formatDate(link.createdAt) : 'Unknown';
                     
                     html += `
                         <div class="link-item">
@@ -283,71 +422,116 @@
         }
 
         async function checkMediaFireUrl() {
-            const url = document.getElementById('mediafireUrl').value.trim();
+            const urlInput = document.getElementById('mediafireUrl');
             const checkLoading = document.getElementById('checkLoading');
             const checkResult = document.getElementById('checkResult');
+            const checkBtn = document.querySelector('.check-btn');
 
-            if (!url) {
-                alert('يرجى إدخال رابط');
+            const mediafireUrl = urlInput.value.trim();
+
+            if (!mediafireUrl) {
+                alert('يرجى إدخال رابط MediaFire');
+                return;
+            }
+
+            if (!mediafireUrl.includes('mediafire.com')) {
+                alert('يرجى إدخال رابط MediaFire صحيح');
                 return;
             }
 
             checkLoading.style.display = 'block';
+            checkBtn.style.display = 'none';
             checkResult.style.display = 'none';
 
             try {
-                const apiUrl = `https://script.google.com/macros/s/AKfycbzlpPlYUeDgsaq0Gb6A6Yxj78E0E7LZbQ3en6hIhIvPrax1URjCeIZ2ptV1mrYlYahC5w/exec?url=${encodeURIComponent(url)}`;
+                const apiUrl = `https://script.google.com/macros/s/AKfycbzlpPlYUeDgsaq0Gb6A6Yxj78E0E7LZbQ3en6hIhIvPrax1URjCeIZ2ptV1mrYlYahC5w/exec?url=${encodeURIComponent(mediafireUrl)}`;
+                
                 const response = await fetch(apiUrl);
                 const result = await response.text();
 
                 if (result.includes('发生错误，请联系开发者 KIMO')) {
                     checkResult.className = 'result error';
-                    checkResult.innerHTML = '❌ الرابط غير صالح';
+                    checkResult.innerHTML = `
+                        <strong>❌ الرابط غير صالح</strong>
+                        <p style="margin-top: 10px; color: #666;">الرابط منتهي الصلاحية أو غير صالح للتحميل</p>
+                    `;
                 } else {
                     checkResult.className = 'result success';
                     checkResult.innerHTML = `
-                        ✅ الرابط صالح
-                        <button onclick="createLinkPage('${url}')" style="margin-top: 10px;">إنشاء صفحة تحميل</button>
+                        <strong>✅ الرابط صالح</strong>
+                        <p style="margin-top: 10px; color: #666;">تم التحقق من صحة الرابط بنجاح</p>
+                        <button class="check-btn" style="margin-top: 15px;" onclick="createLinkPage('${mediafireUrl}')">إنشاء صفحة التحميل</button>
                     `;
                 }
+                
                 checkResult.style.display = 'block';
             } catch (error) {
+                console.error('Error checking URL:', error);
                 checkResult.className = 'result error';
-                checkResult.innerHTML = '❌ خطأ في الاتصال';
+                checkResult.innerHTML = `
+                    <strong>❌ خطأ في الاتصال</strong>
+                    <p style="margin-top: 10px; color: #666;">حدث خطأ أثناء فحص الرابط. يرجى المحاولة مرة أخرى.</p>
+                `;
                 checkResult.style.display = 'block';
             } finally {
                 checkLoading.style.display = 'none';
+                checkBtn.style.display = 'block';
             }
         }
 
         function createLinkPage(mediafireUrl) {
+            if (!currentUser) return;
+
             const db = firebase.database();
             const userLinksRef = db.ref('users/' + currentUser.uid + '/links');
+            
             const linkId = Date.now().toString();
-            const pageName = userName + '-' + Math.random().toString(36).substring(2, 6);
-            const fullPageUrl = window.location.origin + '/page.html?page=' + pageName;
+            const pageName = generatePageName();
+            const fullPageUrl = window.location.origin + '/download.html?page=' + pageName;
             
             userLinksRef.child(linkId).set({
                 originalUrl: mediafireUrl,
                 pageName: pageName,
                 pageUrl: fullPageUrl,
                 createdAt: firebase.database.ServerValue.TIMESTAMP,
-                views: 0
+                views: 0,
+                visitors: {}
             })
             .then(() => {
-                document.getElementById('checkResult').innerHTML = `
-                    ✅ تم إنشاء الصفحة
-                    <p style="margin: 10px 0; font-size: 14px; background: #f8f9fa; padding: 10px; border-radius: 5px;">${fullPageUrl}</p>
-                    <button onclick="copyToClipboard('${fullPageUrl}')">نسخ الرابط</button>
-                    <button onclick="viewLinkPage('${fullPageUrl}')">عرض الصفحة</button>
+                const checkResult = document.getElementById('checkResult');
+                checkResult.innerHTML = `
+                    <strong>✅ تم إنشاء الصفحة بنجاح</strong>
+                    <p style="margin-top: 10px; color: #666;">رابط صفحة التحميل:</p>
+                    <div style="background: white; padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid #e9ecef;">
+                        <p style="margin: 0; word-break: break-all; font-family: monospace;">${fullPageUrl}</p>
+                    </div>
+                    <div class="link-actions" style="justify-content: center;">
+                        <button class="copy-btn" onclick="copyToClipboard('${fullPageUrl}')">نسخ الرابط</button>
+                        <button class="view-btn" onclick="viewLinkPage('${fullPageUrl}')">عرض الصفحة</button>
+                    </div>
                 `;
                 document.getElementById('mediafireUrl').value = '';
+            })
+            .catch((error) => {
+                console.error('Error creating page:', error);
+                alert('حدث خطأ أثناء إنشاء الصفحة. يرجى المحاولة مرة أخرى.');
             });
+        }
+
+        function generatePageName() {
+            const randomChars = Math.random().toString(36).substring(2, 8);
+            return `${userName}-${randomChars}`.toLowerCase();
         }
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text)
-                .then(() => alert('تم نسخ الرابط إلى الحافظة'));
+                .then(() => {
+                    alert('تم نسخ الرابط إلى الحافظة');
+                })
+                .catch((error) => {
+                    console.error('Copy failed:', error);
+                    alert('حدث خطأ أثناء النسخ');
+                });
         }
 
         function viewLinkPage(url) {
@@ -358,6 +542,9 @@
             firebase.auth().signOut()
                 .then(() => {
                     window.location.href = 'google.html';
+                })
+                .catch((error) => {
+                    console.error('Sign out error:', error);
                 });
         }
     </script>
