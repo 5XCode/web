@@ -53,10 +53,24 @@
             margin-top: 20px;
             color: #666;
         }
+        .banned-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="banned-message" id="bannedMessage">
+            <strong>❌ تم حظر حسابك</strong>
+            <p style="margin: 5px 0 0 0; font-size: 14px;">تم حظر حسابك لمخالفة قواعد شركائنا</p>
+        </div>
+
         <h1>مرحباً بك</h1>
         <p>سجل الدخول باستخدام Google للمتابعة</p>
         
@@ -78,23 +92,60 @@
 
         firebase.initializeApp(firebaseConfig);
 
-        function signInWithGoogle() {
+        async function checkIfBanned(userId) {
+            const db = firebase.database();
+            const userRef = db.ref('users/' + userId);
+            
+            try {
+                const snapshot = await userRef.once('value');
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    return userData.banned === true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Error checking ban status:', error);
+                return false;
+            }
+        }
+
+        async function signInWithGoogle() {
             document.getElementById('loading').style.display = 'block';
             
             const provider = new firebase.auth.GoogleAuthProvider();
-            firebase.auth().signInWithPopup(provider)
-                .then(() => {
-                    window.location.href = 'name.html';
-                })
-                .catch((error) => {
-                    alert('خطأ في التسجيل: ' + error.message);
+            
+            try {
+                const result = await firebase.auth().signInWithPopup(provider);
+                const user = result.user;
+                
+                // التحقق إذا كان الحساب محظور
+                const isBanned = await checkIfBanned(user.uid);
+                
+                if (isBanned) {
+                    document.getElementById('bannedMessage').style.display = 'block';
                     document.getElementById('loading').style.display = 'none';
-                });
+                    await firebase.auth().signOut();
+                    return;
+                }
+                
+                // إذا لم يكن محظوراً، المتابعة إلى الصفحة التالية
+                window.location.href = 'name.html';
+                
+            } catch (error) {
+                alert('خطأ في التسجيل: ' + error.message);
+                document.getElementById('loading').style.display = 'none';
+            }
         }
 
-        firebase.auth().onAuthStateChanged((user) => {
+        firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                window.location.href = 'name.html';
+                const isBanned = await checkIfBanned(user.uid);
+                if (isBanned) {
+                    document.getElementById('bannedMessage').style.display = 'block';
+                    await firebase.auth().signOut();
+                } else {
+                    window.location.href = 'name.html';
+                }
             }
         });
     </script>
