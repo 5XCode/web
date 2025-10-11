@@ -3,169 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدخل اسمك - MediaFire Downloader</title>
+    <title>أدخل اسمك</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <style>
-        /* نفس الستايل السابق */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            padding: 40px;
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-        }
-        
-        .logo {
-            font-size: 2.5rem;
-            color: #667eea;
-            margin-bottom: 20px;
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1.8rem;
-        }
-        
-        p {
-            color: #666;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-            text-align: right;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-        }
-        
-        input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .loading {
-            display: none;
-            margin-top: 20px;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .error {
-            color: #e74c3c;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            display: none;
-        }
-
-        .auth-check {
-            margin-bottom: 20px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            font-size: 0.9rem;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #667eea; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h1 { color: #333; margin-bottom: 20px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        button { background: #667eea; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #5a6fd8; }
+        .loading { display: none; margin: 20px 0; }
+        .error { color: red; margin: 10px 0; display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">👤</div>
         <h1>أدخل اسمك</h1>
-        <p>من فضلك أدخل اسمك الشخصي للمتابعة</p>
-        
-        <div id="authCheck" class="auth-check">
-            جاري التحقق من المصادقة...
-        </div>
-        
-        <div id="mainContent" style="display: none;">
-            <div class="form-group">
-                <label for="userName">الاسم الشخصي</label>
-                <input type="text" id="userName" placeholder="أدخل اسمك هنا..." required>
-                <div id="nameError" class="error">الرجاء إدخال اسم صحيح</div>
-            </div>
-            
-            <button id="saveName" class="btn">حفظ والمتابعة</button>
-        </div>
-        
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p style="margin-top: 15px;">جاري الحفظ...</p>
-        </div>
-
-        <div id="errorMessage" class="error" style="display: none; margin-top: 20px;">
-            خطأ في المصادقة. يرجى <a href="google.html">تسجيل الدخول مرة أخرى</a>.
-        </div>
+        <input type="text" id="userName" placeholder="اسمك هنا..." required>
+        <div id="error" class="error">الرجاء إدخال اسم صحيح</div>
+        <button id="saveName">حفظ والمتابعة</button>
+        <div id="loading" class="loading">جاري التحميل...</div>
     </div>
 
     <script>
-        // Firebase Configuration
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyBzB4Hky2iO8FGe_sRz3EfjAfyy4ClgLGQ",
             authDomain: "marvel-75d8b.firebaseapp.com",
@@ -180,58 +44,54 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // التحقق من تسجيل الدخول
-        auth.onAuthStateChanged(async (user) => {
-            const authCheck = document.getElementById('authCheck');
-            const mainContent = document.getElementById('mainContent');
-            const errorMessage = document.getElementById('errorMessage');
-
+        // تحقق من المستخدم
+        auth.onAuthStateChanged((user) => {
             if (!user) {
-                authCheck.innerHTML = '❌ لم يتم تسجيل الدخول';
-                errorMessage.style.display = 'block';
+                window.location.href = 'google.html';
+                return;
+            }
+            console.log('المستخدم مسجل:', user.email);
+        });
+
+        // حفظ الاسم
+        document.getElementById('saveName').addEventListener('click', async function() {
+            const userName = document.getElementById('userName').value.trim();
+            const errorDiv = document.getElementById('error');
+            const button = this;
+            const loading = document.getElementById('loading');
+
+            if (!userName) {
+                errorDiv.style.display = 'block';
                 return;
             }
 
-            authCheck.innerHTML = `✅ تم تسجيل الدخول كـ: ${user.email}`;
-            mainContent.style.display = 'block';
+            errorDiv.style.display = 'none';
+            button.style.display = 'none';
+            loading.style.display = 'block';
 
-            document.getElementById('saveName').addEventListener('click', async () => {
-                const userName = document.getElementById('userName').value.trim();
-                const errorDiv = document.getElementById('nameError');
-                const saveBtn = document.getElementById('saveName');
-                const loading = document.getElementById('loading');
+            try {
+                const user = auth.currentUser;
+                if (!user) throw new Error('لا يوجد مستخدم مسجل');
 
-                if (!userName || userName.length < 2) {
-                    errorDiv.style.display = 'block';
-                    return;
-                }
+                await db.collection("users").doc(user.uid).set({
+                    personalName: userName,
+                    profileCompleted: true,
+                    completedAt: new Date()
+                }, { merge: true });
 
-                errorDiv.style.display = 'none';
-                saveBtn.style.display = 'none';
-                loading.style.display = 'block';
-
-                try {
-                    // حفظ الاسم في Firestore
-                    await db.collection("users").doc(user.uid).set({
-                        personalName: userName,
-                        profileCompleted: true,
-                        completedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-
-                    // الانتقال إلى الصفحة الرئيسية
-                    window.location.href = 'index.html';
-                    
-                } catch (error) {
-                    console.error('خطأ في حفظ الاسم:', error);
-                    alert('حدث خطأ أثناء حفظ الاسم. حاول مرة أخرى.');
-                    saveBtn.style.display = 'block';
-                    loading.style.display = 'none';
-                }
-            });
+                console.log('تم حفظ الاسم، الانتقال إلى index.html');
+                window.location.href = 'index.html';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('خطأ: ' + error.message);
+                button.style.display = 'block';
+                loading.style.display = 'none';
+            }
         });
 
-        // السماح بالضغط على Enter
-        document.getElementById('userName')?.addEventListener('keypress', function(e) {
+        // تفعيل زر Enter
+        document.getElementById('userName').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 document.getElementById('saveName').click();
             }
