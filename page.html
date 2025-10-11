@@ -8,54 +8,62 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            min-height: 100vh;
         }
         .container {
             background: white;
             padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             text-align: center;
             max-width: 400px;
             width: 100%;
         }
-        h1 { color: #333; margin-bottom: 20px; }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .page-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
         button {
             background: #28a745;
             color: white;
             border: none;
-            padding: 20px 40px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 16px;
             cursor: pointer;
             width: 100%;
             margin-bottom: 10px;
-            transition: 0.3s;
         }
-        button:hover:not(:disabled) { background: #218838; transform: translateY(-2px); }
-        button:disabled { background: #6c757d; cursor: not-allowed; }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
         .countdown {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 15px 0;
             color: #333;
-            height: 40px;
         }
         .progress {
             width: 100%;
             height: 10px;
             background: #e9ecef;
             border-radius: 5px;
-            margin: 20px 0;
+            margin: 15px 0;
             overflow: hidden;
         }
         .progress-bar {
@@ -64,35 +72,45 @@
             background: #28a745;
             transition: width 1s linear;
         }
-        .install-btn {
-            background: #dc3545;
-            font-size: 16px;
-            padding: 15px 30px;
-            display: none;
-        }
-        .install-btn:hover:not(:disabled) { background: #c82333; }
         .message {
             padding: 15px;
             border-radius: 5px;
             margin: 15px 0;
             display: none;
         }
-        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .stats {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>تثبيت الملف</h1>
+        <h1>تحميل الملف</h1>
         
-        <button id="downloadBtn" onclick="startCountdown()">تثبيت الملف</button>
+        <div class="page-info">
+            <div id="pageName">جاري التحميل...</div>
+            <div id="pageCreator" style="color: #666; font-size: 14px; margin-top: 5px;">بواسطة: ...</div>
+        </div>
+
+        <button id="downloadBtn" onclick="startDownload()">بدء التثبيت</button>
         
         <div class="countdown" id="countdown"></div>
         <div class="progress">
             <div class="progress-bar" id="progressBar"></div>
         </div>
-        
-        <button class="install-btn" id="installBtn" onclick="processDownload()" disabled>اضغط للتثبيت</button>
         
         <div class="message success" id="successMessage">
             ✅ جاري التحميل...
@@ -100,6 +118,10 @@
         
         <div class="message error" id="errorMessage">
             ❌ حدث خطأ
+        </div>
+
+        <div class="stats">
+            <div id="viewsCount">👁️ الزيارات: 0</div>
         </div>
     </div>
 
@@ -117,8 +139,6 @@
         firebase.initializeApp(firebaseConfig);
 
         let pageData = null;
-        let currentPageId = null;
-        let currentUserId = null;
         let hasCountedView = false;
 
         function getPageNameFromURL() {
@@ -126,172 +146,115 @@
             return urlParams.get('page');
         }
 
-        function generateVisitorId() {
-            return 'visitor_' + Math.random().toString(36).substring(2, 15);
-        }
-
-        function getVisitorId() {
-            let visitorId = localStorage.getItem('page_visitor_id');
-            if (!visitorId) {
-                visitorId = generateVisitorId();
-                localStorage.setItem('page_visitor_id', visitorId);
-            }
-            return visitorId;
-        }
-
         async function findPageData(pageName) {
             const db = firebase.database();
             const usersRef = db.ref('users');
             
-            try {
-                const snapshot = await usersRef.once('value');
-                let foundData = null;
+            const snapshot = await usersRef.once('value');
+            let foundData = null;
 
-                snapshot.forEach((userSnapshot) => {
-                    const userId = userSnapshot.key;
-                    const userData = userSnapshot.val();
-                    
-                    if (userData && userData.links) {
-                        Object.keys(userData.links).forEach((linkId) => {
-                            const link = userData.links[linkId];
-                            if (link.pageName === pageName) {
-                                foundData = { 
-                                    page: link, 
-                                    userId: userId, 
-                                    linkId: linkId 
-                                };
-                            }
-                        });
-                    }
-                });
-
-                return foundData;
-            } catch (error) {
-                console.error('Error finding page:', error);
-                return null;
-            }
-        }
-
-        async function updateViewCount(userId, linkId) {
-            if (hasCountedView) return;
-            
-            const visitorId = getVisitorId();
-            const db = firebase.database();
-            const viewRef = db.ref(`users/${userId}/links/${linkId}/visitors/${visitorId}`);
-            
-            try {
-                const snapshot = await viewRef.once('value');
+            snapshot.forEach((userSnapshot) => {
+                const userId = userSnapshot.key;
+                const userData = userSnapshot.val();
                 
-                if (!snapshot.exists()) {
-                    const linkRef = db.ref(`users/${userId}/links/${linkId}`);
-                    await linkRef.transaction((currentData) => {
-                        if (currentData) {
-                            currentData.views = (currentData.views || 0) + 1;
+                if (userData.links) {
+                    Object.keys(userData.links).forEach((linkId) => {
+                        const link = userData.links[linkId];
+                        if (link.pageName === pageName) {
+                            foundData = { page: link, userId: userId, linkId: linkId };
                         }
-                        return currentData;
-                    });
-                    
-                    await viewRef.set({
-                        visited: true,
-                        timestamp: firebase.database.ServerValue.TIMESTAMP,
-                        clicked: false
                     });
                 }
-                
-                hasCountedView = true;
-            } catch (error) {
-                console.error('Error updating view count:', error);
-            }
+            });
+
+            return foundData;
         }
 
-        async function markAsClicked(userId, linkId) {
-            const visitorId = getVisitorId();
-            const db = firebase.database();
-            const clickRef = db.ref(`users/${userId}/links/${linkId}/visitors/${visitorId}/clicked`);
+        function updateViewCount(userId, linkId) {
+            if (hasCountedView) return;
             
-            try {
-                await clickRef.set(true);
-            } catch (error) {
-                console.error('Error marking as clicked:', error);
-            }
+            const db = firebase.database();
+            const linkRef = db.ref(`users/${userId}/links/${linkId}`);
+            
+            linkRef.transaction((currentData) => {
+                if (currentData) {
+                    currentData.views = (currentData.views || 0) + 1;
+                    document.getElementById('viewsCount').textContent = `👁️ الزيارات: ${currentData.views}`;
+                }
+                return currentData;
+            });
+            
+            hasCountedView = true;
         }
 
         async function loadPageData() {
             const pageName = getPageNameFromURL();
-            
             if (!pageName) {
                 showError('الصفحة غير موجودة');
                 return;
             }
 
+            document.getElementById('pageName').textContent = pageName;
+
             try {
                 const result = await findPageData(pageName);
-                
                 if (!result) {
                     showError('الصفحة غير موجودة');
                     return;
                 }
 
                 pageData = result.page;
-                currentPageId = result.linkId;
-                currentUserId = result.userId;
+
+                const userRef = firebase.database().ref(`users/${result.userId}`);
+                const userSnapshot = await userRef.once('value');
+                const userData = userSnapshot.val();
+                
+                if (userData && userData.name) {
+                    document.getElementById('pageCreator').textContent = `بواسطة: ${userData.name}`;
+                }
+
+                document.getElementById('viewsCount').textContent = `👁️ الزيارات: ${pageData.views || 0}`;
+                updateViewCount(result.userId, result.linkId);
 
             } catch (error) {
-                console.error('Error loading page:', error);
-                showError('حدث خطأ في تحميل الصفحة');
+                showError('خطأ في تحميل الصفحة');
             }
         }
 
-        function startCountdown() {
-            const downloadBtn = document.getElementById('downloadBtn');
-            const countdownElement = document.getElementById('countdown');
-            const progressBar = document.getElementById('progressBar');
-            const installBtn = document.getElementById('installBtn');
+        function startDownload() {
+            const btn = document.getElementById('downloadBtn');
+            const countdown = document.getElementById('countdown');
+            const progress = document.getElementById('progressBar');
             
-            downloadBtn.disabled = true;
-            let countdown = 10;
+            btn.disabled = true;
+            let seconds = 10;
             
-            const countdownInterval = setInterval(() => {
-                countdownElement.textContent = countdown;
-                progressBar.style.width = `${((10 - countdown) / 10) * 100}%`;
+            const timer = setInterval(() => {
+                countdown.textContent = seconds;
+                progress.style.width = `${100 - (seconds * 10)}%`;
                 
-                if (countdown === 0) {
-                    clearInterval(countdownInterval);
-                    installBtn.style.display = 'block';
-                    installBtn.disabled = false;
-                    
-                    if (currentUserId && currentPageId) {
-                        updateViewCount(currentUserId, currentPageId);
-                    }
+                if (seconds === 0) {
+                    clearInterval(timer);
+                    processDownload();
                 }
-                
-                countdown--;
+                seconds--;
             }, 1000);
         }
 
         async function processDownload() {
-            const installBtn = document.getElementById('installBtn');
-            const successMessage = document.getElementById('successMessage');
-            
-            installBtn.disabled = true;
-            successMessage.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'block';
 
             try {
-                if (!pageData || !pageData.originalUrl) {
-                    throw new Error('لا يوجد رابط تحميل متاح');
-                }
-
-                if (currentUserId && currentPageId) {
-                    await markAsClicked(currentUserId, currentPageId);
+                if (!pageData?.originalUrl) {
+                    throw new Error('لا يوجد رابط تحميل');
                 }
 
                 const apiUrl = `https://script.google.com/macros/s/AKfycbzlpPlYUeDgsaq0Gb6A6Yxj78E0E7LZbQ3en6hIhIvPrax1URjCeIZ2ptV1mrYlYahC5w/exec?url=${encodeURIComponent(pageData.originalUrl)}`;
-                
                 const response = await fetch(apiUrl);
                 const result = await response.text();
 
                 if (result.includes('发生错误，请联系开发者 KIMO')) {
-                    throw new Error('رابط التحميل غير صالح');
+                    throw new Error('الرابط غير صالح');
                 }
 
                 setTimeout(() => {
@@ -300,20 +263,20 @@
 
             } catch (error) {
                 showError(error.message);
-                installBtn.disabled = false;
-                successMessage.style.display = 'none';
+                document.getElementById('downloadBtn').disabled = false;
+                document.getElementById('countdown').textContent = '';
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('successMessage').style.display = 'none';
             }
         }
 
         function showError(message) {
-            const errorMessage = document.getElementById('errorMessage');
-            errorMessage.innerHTML = `❌ ${message}`;
-            errorMessage.style.display = 'block';
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.innerHTML = `❌ ${message}`;
+            errorElement.style.display = 'block';
         }
 
-        window.addEventListener('load', async () => {
-            await loadPageData();
-        });
+        window.addEventListener('load', loadPageData);
     </script>
 </body>
 </html>
