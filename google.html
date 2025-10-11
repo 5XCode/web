@@ -3,164 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - MediaFire Downloader</title>
+    <title>تسجيل الدخول</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            padding: 40px;
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-        }
-        
-        .logo {
-            font-size: 2.5rem;
-            color: #667eea;
-            margin-bottom: 20px;
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1.8rem;
-        }
-        
-        p {
-            color: #666;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-        
-        .btn-google {
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
-        }
-        
-        .btn-google:hover {
-            background: #357ae8;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
-        }
-        
-        .google-icon {
-            background: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: #4285f4;
-        }
-        
-        .loading {
-            display: none;
-            margin-top: 20px;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .debug-info {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 0.8rem;
-            text-align: left;
-            display: none;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #667eea; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 400px; }
+        button { background: #4285f4; color: white; border: none; padding: 15px 30px; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; margin: 10px 0; }
+        button:hover { background: #357ae8; }
+        .loading { display: none; margin: 20px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">⬇️</div>
-        <h1>مرحباً بك!</h1>
-        <p>سجل الدخول بحساب Google لإنشاء روابط تحميل مباشرة لملفات MediaFire</p>
-        
-        <button id="googleLogin" class="btn-google">
-            <span class="google-icon">G</span>
-            <span>تسجيل الدخول بـ Google</span>
-        </button>
-        
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p style="margin-top: 15px;">جاري التسجيل...</p>
-        </div>
-
-        <button onclick="toggleDebug()" style="margin-top: 15px; background: none; border: none; color: #666; cursor: pointer; font-size: 0.8rem;">
-            إظهار معلومات التصحيح
-        </button>
-        
-        <div id="debugInfo" class="debug-info">
-            <strong>معلومات التصحيح:</strong>
-            <div id="debugContent"></div>
-        </div>
+        <h2>تسجيل الدخول</h2>
+        <p>سجل الدخول بحساب Google</p>
+        <button id="googleLogin">تسجيل الدخول بـ Google</button>
+        <div id="loading" class="loading">جاري التسجيل...</div>
     </div>
 
     <script>
-        // دالة لعرض معلومات التصحيح
-        function debug(message) {
-            console.log(message);
-            const debugContent = document.getElementById('debugContent');
-            if (debugContent) {
-                debugContent.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
-            }
-        }
-
-        function toggleDebug() {
-            const debugInfo = document.getElementById('debugInfo');
-            debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // Firebase Configuration
-        debug('جاري تهيئة Firebase...');
         const firebaseConfig = {
             apiKey: "AIzaSyBzB4Hky2iO8FGe_sRz3EfjAfyy4ClgLGQ",
             authDomain: "marvel-75d8b.firebaseapp.com",
@@ -170,89 +34,36 @@
             appId: "1:1098663412275:web:5cdc145765a20130189946"
         };
 
-        try {
-            // Initialize Firebase
-            debug('جاري تحميل Firebase...');
-            firebase.initializeApp(firebaseConfig);
-            debug('تم تهيئة Firebase بنجاح');
-        } catch (error) {
-            debug('خطأ في تهيئة Firebase: ' + error.message);
-        }
-
+        firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        
-        // إعداد مصادقة Google
-        const provider = new firebase.auth.GoogleAuthProvider();
-        
-        // إضافة نطاقات إضافية إذا لزم الأمر
-        provider.addScope('email');
-        provider.addScope('profile');
 
-        debug('جاهز للتسجيل...');
-
-        document.getElementById('googleLogin').addEventListener('click', async () => {
-            const loginBtn = document.getElementById('googleLogin');
+        document.getElementById('googleLogin').addEventListener('click', async function() {
+            const button = this;
             const loading = document.getElementById('loading');
             
-            loginBtn.style.display = 'none';
+            button.style.display = 'none';
             loading.style.display = 'block';
 
-            debug('بدء عملية التسجيل...');
-
             try {
-                debug('فتح نافذة مصادقة Google...');
+                const provider = new firebase.auth.GoogleAuthProvider();
                 const result = await auth.signInWithPopup(provider);
-                debug('تم المصادقة بنجاح');
-                
                 const user = result.user;
-                debug(`المستخدم: ${user.email}, UID: ${user.uid}`);
-                
-                // حفظ بيانات المستخدم في Firestore
-                debug('جاري حفظ بيانات المستخدم في Firestore...');
+
                 await db.collection("users").doc(user.uid).set({
                     email: user.email,
                     displayName: user.displayName,
-                    photoURL: user.photoURL,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: new Date()
                 }, { merge: true });
 
-                debug('تم حفظ البيانات، جاري الانتقال إلى صفحة الاسم...');
-
-                // الانتقال إلى صفحة الاسم
-                setTimeout(() => {
-                    window.location.href = 'name.html';
-                }, 1000);
+                // الانتقال مباشرة لصفحة الاسم
+                window.location.href = 'name.html';
                 
             } catch (error) {
-                console.error('خطأ في التسجيل:', error);
-                debug(`خطأ: ${error.message} - ${error.code}`);
-                
-                // معالجة الأخطاء الشائعة
-                if (error.code === 'auth/popup-blocked') {
-                    alert('تم حظر النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة لهذا الموقع.');
-                } else if (error.code === 'auth/popup-closed-by-user') {
-                    alert('تم إغلاق نافذة التسجيل. يرجى المحاولة مرة أخرى.');
-                } else if (error.code === 'auth/network-request-failed') {
-                    alert('خطأ في الشبكة. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.');
-                } else {
-                    alert('حدث خطأ أثناء التسجيل: ' + error.message);
-                }
-                
-                loginBtn.style.display = 'flex';
+                console.error('Error:', error);
+                alert('خطأ في التسجيل: ' + error.message);
+                button.style.display = 'block';
                 loading.style.display = 'none';
-            }
-        });
-
-        // التحقق من حالة المستخدم الحالية
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                debug(`المستخدم مسجل بالفعل: ${user.email}`);
-                // إذا كان المستخدم مسجل بالفعل، انتقل مباشرة إلى الصفحة الرئيسية
-                window.location.href = 'name.html';
-            } else {
-                debug('لا يوجد مستخدم مسجل');
             }
         });
     </script>
