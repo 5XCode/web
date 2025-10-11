@@ -3,246 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدخل اسمك</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 100%;
-            backdrop-filter: blur(10px);
-        }
-        .logo {
-            font-size: 48px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            text-align: center;
-            font-size: 28px;
-        }
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            text-align: center;
-            line-height: 1.6;
-        }
-        .user-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            text-align: center;
-            border: 1px solid #e9ecef;
-        }
-        .user-email {
-            color: #333;
-            font-weight: 600;
-        }
-        .input-group {
-            margin-bottom: 25px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 600;
-        }
-        input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .submit-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        .logout-btn {
-            background: transparent;
-            color: #666;
-            border: 1px solid #ddd;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 15px;
-        }
-        .logout-btn:hover {
-            background: #f8f9fa;
-            color: #333;
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            margin-top: 20px;
-        }
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <title>إدخال الاسم - نظام التحميل</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
 </head>
 <body>
     <div class="container">
-        <div class="logo">👤</div>
-        <h1>أدخل اسمك</h1>
-        <p class="subtitle">اختر اسمًا سيظهر في روابطك الخاصة</p>
-        
-        <div class="user-info">
-            <div class="user-email" id="userEmail">جاري التحميل...</div>
-        </div>
-
-        <div class="input-group">
-            <label for="userName">اسمك الشخصي:</label>
-            <input type="text" id="userName" placeholder="أدخل اسمك هنا..." maxlength="20">
-        </div>
-
-        <button class="submit-btn" onclick="saveUserName()">متابعة إلى الصفحة الرئيسية</button>
-        <button class="logout-btn" onclick="signOut()">تسجيل الخروج</button>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>جاري التحميل...</p>
+        <div class="card">
+            <h1>إدخال الاسم</h1>
+            <p>أدخل اسمك الشخصي للمتابعة</p>
+            <form id="nameForm">
+                <input type="text" id="nameInput" placeholder="أدخل اسمك" required>
+                <button type="submit" class="btn-primary">حفظ والمتابعة</button>
+            </form>
+            <div id="message" class="message"></div>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBzB4Hky2iO8FGe_sRz3EfjAfyy4ClgLGQ",
-            authDomain: "marvel-75d8b.firebasestorage.app",
-            databaseURL: "https://marvel-75d8b-default-rtdb.firebaseio.com",
-            projectId: "marvel-75d8b",
-            storageBucket: "marvel-75d8b.firebasestorage.app",
-            messagingSenderId: "1098663412275",
-            appId: "1:1098663412275:android:5cdc145765a20130189946"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-
-        let currentUser = null;
-
-        document.getElementById('loading').style.display = 'block';
-
-        setTimeout(() => {
-            firebase.auth().onAuthStateChanged((user) => {
-                document.getElementById('loading').style.display = 'none';
-                
-                if (user) {
-                    currentUser = user;
-                    document.getElementById('userEmail').textContent = user.email;
-                    checkIfUserNameExists(user.uid);
-                } else {
-                    window.location.href = 'google.html';
-                }
-            });
-        }, 2000);
-
-        function checkIfUserNameExists(userId) {
-            const db = firebase.database();
-            db.ref('users/' + userId + '/name').once('value')
-                .then((snapshot) => {
-                    if (snapshot.exists()) {
+        // التحقق من تسجيل الدخول
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'google.html';
+            } else {
+                // تحميل بيانات المستخدم لمعرفة إذا كان قد أدخل الاسم مسبقاً
+                database.ref('users/' + user.uid).once('value').then((snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData && userData.name) {
+                        // إذا كان الاسم موجوداً، الانتقال مباشرة للصفحة الرئيسية
                         window.location.href = 'index.html';
                     }
                 });
-        }
-
-        function saveUserName() {
-            const userName = document.getElementById('userName').value.trim();
-            const loading = document.getElementById('loading');
-            const submitBtn = document.querySelector('.submit-btn');
-
-            if (!userName) {
-                alert('يرجى إدخال اسمك الشخصي');
-                return;
             }
+        });
 
-            if (userName.length < 2) {
-                alert('الاسم يجب أن يكون على الأقل حرفين');
-                return;
-            }
-
-            loading.style.display = 'block';
-            submitBtn.disabled = true;
-
-            const db = firebase.database();
-            const userRef = db.ref('users/' + currentUser.uid);
-
-            userRef.update({
-                name: userName,
-                email: currentUser.email,
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                banned: false
-            })
-            .then(() => {
-                setTimeout(() => {
+        // معالج إرسال النموذج
+        document.getElementById('nameForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('nameInput').value.trim();
+            const user = auth.currentUser;
+            
+            if (name && user) {
+                // تحديث اسم المستخدم في قاعدة البيانات
+                database.ref('users/' + user.uid).update({
+                    name: name
+                }).then(() => {
                     window.location.href = 'index.html';
-                }, 1500);
-            })
-            .catch((error) => {
-                alert('حدث خطأ أثناء حفظ الاسم: ' + error.message);
-                loading.style.display = 'none';
-                submitBtn.disabled = false;
-            });
-        }
-
-        function signOut() {
-            document.getElementById('loading').style.display = 'block';
-            firebase.auth().signOut()
-                .then(() => {
-                    window.location.href = 'google.html';
+                }).catch((error) => {
+                    document.getElementById('message').textContent = 'حدث خطأ: ' + error.message;
                 });
-        }
+            } else {
+                document.getElementById('message').textContent = 'يرجى إدخال اسم صحيح';
+            }
+        });
     </script>
 </body>
 </html>
