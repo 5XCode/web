@@ -106,6 +106,16 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .debug-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            text-align: left;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -123,10 +133,34 @@
             <div class="spinner"></div>
             <p style="margin-top: 15px;">جاري التسجيل...</p>
         </div>
+
+        <button onclick="toggleDebug()" style="margin-top: 15px; background: none; border: none; color: #666; cursor: pointer; font-size: 0.8rem;">
+            إظهار معلومات التصحيح
+        </button>
+        
+        <div id="debugInfo" class="debug-info">
+            <strong>معلومات التصحيح:</strong>
+            <div id="debugContent"></div>
+        </div>
     </div>
 
     <script>
+        // دالة لعرض معلومات التصحيح
+        function debug(message) {
+            console.log(message);
+            const debugContent = document.getElementById('debugContent');
+            if (debugContent) {
+                debugContent.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            }
+        }
+
+        function toggleDebug() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
+        }
+
         // Firebase Configuration
+        debug('جاري تهيئة Firebase...');
         const firebaseConfig = {
             apiKey: "AIzaSyBzB4Hky2iO8FGe_sRz3EfjAfyy4ClgLGQ",
             authDomain: "marvel-75d8b.firebaseapp.com",
@@ -136,13 +170,26 @@
             appId: "1:1098663412275:web:5cdc145765a20130189946"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            // Initialize Firebase
+            debug('جاري تحميل Firebase...');
+            firebase.initializeApp(firebaseConfig);
+            debug('تم تهيئة Firebase بنجاح');
+        } catch (error) {
+            debug('خطأ في تهيئة Firebase: ' + error.message);
+        }
+
         const auth = firebase.auth();
         const db = firebase.firestore();
         
         // إعداد مصادقة Google
         const provider = new firebase.auth.GoogleAuthProvider();
+        
+        // إضافة نطاقات إضافية إذا لزم الأمر
+        provider.addScope('email');
+        provider.addScope('profile');
+
+        debug('جاهز للتسجيل...');
 
         document.getElementById('googleLogin').addEventListener('click', async () => {
             const loginBtn = document.getElementById('googleLogin');
@@ -151,26 +198,61 @@
             loginBtn.style.display = 'none';
             loading.style.display = 'block';
 
+            debug('بدء عملية التسجيل...');
+
             try {
+                debug('فتح نافذة مصادقة Google...');
                 const result = await auth.signInWithPopup(provider);
+                debug('تم المصادقة بنجاح');
+                
                 const user = result.user;
+                debug(`المستخدم: ${user.email}, UID: ${user.uid}`);
                 
                 // حفظ بيانات المستخدم في Firestore
+                debug('جاري حفظ بيانات المستخدم في Firestore...');
                 await db.collection("users").doc(user.uid).set({
                     email: user.email,
                     displayName: user.displayName,
                     photoURL: user.photoURL,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
 
+                debug('تم حفظ البيانات، جاري الانتقال إلى صفحة الاسم...');
+
                 // الانتقال إلى صفحة الاسم
-                window.location.href = 'name.html';
+                setTimeout(() => {
+                    window.location.href = 'name.html';
+                }, 1000);
                 
             } catch (error) {
                 console.error('خطأ في التسجيل:', error);
-                alert('حدث خطأ أثناء التسجيل. حاول مرة أخرى.');
+                debug(`خطأ: ${error.message} - ${error.code}`);
+                
+                // معالجة الأخطاء الشائعة
+                if (error.code === 'auth/popup-blocked') {
+                    alert('تم حظر النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة لهذا الموقع.');
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    alert('تم إغلاق نافذة التسجيل. يرجى المحاولة مرة أخرى.');
+                } else if (error.code === 'auth/network-request-failed') {
+                    alert('خطأ في الشبكة. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.');
+                } else {
+                    alert('حدث خطأ أثناء التسجيل: ' + error.message);
+                }
+                
                 loginBtn.style.display = 'flex';
                 loading.style.display = 'none';
+            }
+        });
+
+        // التحقق من حالة المستخدم الحالية
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                debug(`المستخدم مسجل بالفعل: ${user.email}`);
+                // إذا كان المستخدم مسجل بالفعل، انتقل مباشرة إلى الصفحة الرئيسية
+                window.location.href = 'name.html';
+            } else {
+                debug('لا يوجد مستخدم مسجل');
             }
         });
     </script>
