@@ -145,26 +145,24 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
-
+    <script>
+        // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyBzB4Hky2iO8FGe_sRz3EfjAfyy4ClgLGQ",
+            authDomain: "marvel-75d8b.firebaseapp.com",
+            projectId: "marvel-75d8b",
+            storageBucket: "marvel-75d8b.firebasestorage.app",
+            messagingSenderId: "1098663412275",
+            appId: "1:1098663412275:web:5cdc145765a20130189946"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth();
-        const db = getFirestore();
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         // التحقق من تسجيل الدخول
-        onAuthStateChanged(auth, async (user) => {
+        auth.onAuthStateChanged(async (user) => {
             if (!user) {
                 window.location.href = 'google.html';
                 return;
@@ -187,10 +185,10 @@
 
                 try {
                     // حفظ الاسم في Firestore
-                    await setDoc(doc(db, "users", user.uid), {
+                    await db.collection("users").doc(user.uid).set({
                         personalName: userName,
                         profileCompleted: true,
-                        completedAt: new Date()
+                        completedAt: firebase.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
 
                     // الانتقال إلى الصفحة الرئيسية
