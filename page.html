@@ -8,13 +8,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
@@ -23,185 +19,85 @@
             padding: 20px;
         }
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             text-align: center;
-            max-width: 500px;
+            max-width: 400px;
             width: 100%;
-            backdrop-filter: blur(10px);
         }
-        .logo {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        .download-section {
-            margin: 30px 0;
-        }
-        .download-btn {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        h1 { color: #333; margin-bottom: 20px; }
+        button {
+            background: #28a745;
             color: white;
             border: none;
             padding: 20px 40px;
-            border-radius: 50px;
-            font-size: 20px;
+            border-radius: 10px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
             width: 100%;
-            position: relative;
-            overflow: hidden;
+            margin-bottom: 10px;
+            transition: 0.3s;
         }
-        .download-btn:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        .download-btn:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
-        }
+        button:hover:not(:disabled) { background: #218838; transform: translateY(-2px); }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
         .countdown {
-            font-size: 32px;
+            font-size: 24px;
             font-weight: bold;
+            margin: 20px 0;
             color: #333;
-            margin: 25px 0;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            height: 40px;
         }
-        .progress-container {
+        .progress {
             width: 100%;
-            height: 12px;
+            height: 10px;
             background: #e9ecef;
-            border-radius: 10px;
-            margin: 25px 0;
+            border-radius: 5px;
+            margin: 20px 0;
             overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
         .progress-bar {
             width: 0%;
             height: 100%;
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            border-radius: 10px;
+            background: #28a745;
             transition: width 1s linear;
         }
         .install-btn {
-            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
-            color: white;
-            border: none;
-            padding: 18px 36px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 10px;
+            background: #dc3545;
+            font-size: 16px;
+            padding: 15px 30px;
             display: none;
         }
-        .install-btn:not(:disabled):hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(220, 53, 69, 0.4);
-        }
-        .install-btn:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
+        .install-btn:hover:not(:disabled) { background: #c82333; }
         .message {
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
             display: none;
-            font-weight: 600;
         }
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 2px solid #c3e6cb;
-        }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 2px solid #f5c6cb;
-        }
-        .loading {
-            display: none;
-            margin: 20px 0;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #28a745;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
-        .step {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #dee2e6;
-            transition: all 0.3s ease;
-        }
-        .step.active {
-            background: #28a745;
-            transform: scale(1.2);
-        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">📥</div>
         <h1>تثبيت الملف</h1>
         
-        <div class="step-indicator">
-            <div class="step" id="step1"></div>
-            <div class="step" id="step2"></div>
+        <button id="downloadBtn" onclick="startCountdown()">تثبيت الملف</button>
+        
+        <div class="countdown" id="countdown"></div>
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
         </div>
-
-        <div class="download-section">
-            <button class="download-btn" id="downloadBtn" onclick="startCountdown()">
-                🚀 اضغط لبدء التثبيت
-            </button>
-            
-            <div class="countdown" id="countdown"></div>
-            <div class="progress-container">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            
-            <button class="install-btn" id="installBtn" onclick="processDownload()" disabled>
-                ⚡ اضغط للتثبيت النهائي
-            </button>
-        </div>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>جاري تجهيز التحميل...</p>
-        </div>
-
+        
+        <button class="install-btn" id="installBtn" onclick="processDownload()" disabled>اضغط للتثبيت</button>
+        
         <div class="message success" id="successMessage">
-            ✅ جاري بدء التحميل...
+            ✅ جاري التحميل...
         </div>
-
+        
         <div class="message error" id="errorMessage">
             ❌ حدث خطأ
         </div>
@@ -231,7 +127,7 @@
         }
 
         function generateVisitorId() {
-            return 'visitor_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            return 'visitor_' + Math.random().toString(36).substring(2, 15);
         }
 
         function getVisitorId() {
@@ -347,14 +243,12 @@
         }
 
         function startCountdown() {
-            document.getElementById('step1').classList.add('active');
             const downloadBtn = document.getElementById('downloadBtn');
             const countdownElement = document.getElementById('countdown');
             const progressBar = document.getElementById('progressBar');
             const installBtn = document.getElementById('installBtn');
             
             downloadBtn.disabled = true;
-            downloadBtn.textContent = 'جاري العد التنازلي...';
             let countdown = 10;
             
             const countdownInterval = setInterval(() => {
@@ -363,10 +257,8 @@
                 
                 if (countdown === 0) {
                     clearInterval(countdownInterval);
-                    countdownElement.style.display = 'none';
                     installBtn.style.display = 'block';
                     installBtn.disabled = false;
-                    document.getElementById('step2').classList.add('active');
                     
                     if (currentUserId && currentPageId) {
                         updateViewCount(currentUserId, currentPageId);
@@ -379,12 +271,10 @@
 
         async function processDownload() {
             const installBtn = document.getElementById('installBtn');
-            const loadingElement = document.getElementById('loading');
             const successMessage = document.getElementById('successMessage');
             
             installBtn.disabled = true;
-            installBtn.textContent = 'جاري التجهيز...';
-            loadingElement.style.display = 'block';
+            successMessage.style.display = 'block';
 
             try {
                 if (!pageData || !pageData.originalUrl) {
@@ -401,23 +291,17 @@
                 const result = await response.text();
 
                 if (result.includes('发生错误，请联系开发者 KIMO')) {
-                    throw new Error('رابط التحميل غير صالح أو منتهي الصلاحية');
+                    throw new Error('رابط التحميل غير صالح');
                 }
-
-                loadingElement.style.display = 'none';
-                successMessage.style.display = 'block';
-                installBtn.textContent = '✅ تم البدء في التحميل';
 
                 setTimeout(() => {
                     window.location.href = result;
                 }, 2000);
 
             } catch (error) {
-                console.error('Download error:', error);
                 showError(error.message);
                 installBtn.disabled = false;
-                installBtn.textContent = '⚡ اضغط للتثبيت النهائي';
-                loadingElement.style.display = 'none';
+                successMessage.style.display = 'none';
             }
         }
 
