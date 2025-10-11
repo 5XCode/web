@@ -3,312 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الصفحة الرئيسية</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-        }
-        .header {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .user-info h2 {
-            margin: 0;
-            color: #333;
-        }
-        .user-info p {
-            margin: 5px 0 0 0;
-            color: #666;
-        }
-        .logout {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        .result {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 5px;
-            display: none;
-        }
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .link-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            border-right: 4px solid #007bff;
-        }
-        .link-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-        .link-name {
-            font-weight: bold;
-        }
-        .link-views {
-            background: #6c757d;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-        .link-url {
-            color: #666;
-            font-size: 14px;
-            word-break: break-all;
-            margin-bottom: 10px;
-        }
-        .link-actions button {
-            width: auto;
-            padding: 5px 10px;
-            margin-right: 5px;
-            font-size: 12px;
-        }
-        .copy-btn { background: #28a745; }
-        .view-btn { background: #17a2b8; }
-        .loading {
-            text-align: center;
-            color: #666;
-            margin: 20px 0;
-        }
-    </style>
+    <title>الصفحة الرئيسية - نظام التحميل</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
 </head>
 <body>
-    <div class="header">
-        <div class="user-info">
-            <h2 id="userName">جاري التحميل...</h2>
-            <p id="userEmail">جاري التحميل...</p>
+    <header>
+        <div class="container">
+            <h1>نظام التحميل</h1>
+            <div class="user-info">
+                <span id="userName"></span>
+                <button id="logoutBtn" class="btn-secondary">تسجيل الخروج</button>
+            </div>
         </div>
-        <button class="logout" onclick="signOut()">تسجيل الخروج</button>
-    </div>
+    </header>
 
-    <div class="card">
-        <h3>فحص رابط MediaFire</h3>
-        <input type="url" id="mediafireUrl" placeholder="https://www.mediafire.com/...">
-        <button onclick="checkMediaFireUrl()">فحص الرابط</button>
-        
-        <div class="loading" id="checkLoading" style="display: none;">جاري الفحص...</div>
-        
-        <div class="result" id="checkResult"></div>
-    </div>
-
-    <div class="card">
-        <h3>روابطي المنشورة</h3>
-        <div id="linksList">
-            <div class="loading" id="linksLoading">جاري تحميل الروابط...</div>
+    <main class="container">
+        <div class="card">
+            <h2>إنشاء صفحة تحميل جديدة</h2>
+            <form id="linkForm">
+                <input type="url" id="mediafireLink" placeholder="أدخل رابط MediaFire" required>
+                <button type="submit" class="btn-primary">فحص الرابط وإنشاء الصفحة</button>
+            </form>
+            <div id="message" class="message"></div>
+            <div id="loading" class="loading" style="display: none;">جاري فحص الرابط...</div>
         </div>
-    </div>
+
+        <div class="card">
+            <h2>صفحاتك المنشأة</h2>
+            <div id="userLinks" class="links-list">
+                <!-- سيتم ملء هذا القسم بالصفحات المنشأة -->
+            </div>
+        </div>
+    </main>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBzB4Hky2iO8FGe_sRz3EfjAfyy4ClgLGQ",
-            authDomain: "marvel-75d8b.firebasestorage.app",
-            databaseURL: "https://marvel-75d8b-default-rtdb.firebaseio.com",
-            projectId: "marvel-75d8b",
-            storageBucket: "marvel-75d8b.firebasestorage.app",
-            messagingSenderId: "1098663412275",
-            appId: "1:1098663412275:android:5cdc145765a20130189946"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-
         let currentUser = null;
-        let userName = '';
 
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('userEmail').textContent = user.email;
-                loadUserData(user.uid);
-                loadUserLinks(user.uid);
-            } else {
+        // التحقق من تسجيل الدخول
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
                 window.location.href = 'google.html';
+            } else {
+                currentUser = user;
+                loadUserData();
+                loadUserPages();
             }
         });
 
-        function loadUserData(userId) {
-            const db = firebase.database();
-            db.ref('users/' + userId).once('value')
-                .then((snapshot) => {
-                    if (snapshot.exists()) {
-                        const userData = snapshot.val();
-                        userName = userData.name;
-                        document.getElementById('userName').textContent = userData.name;
-                    } else {
-                        window.location.href = 'name.html';
-                    }
-                });
-        }
-
-        function loadUserLinks(userId) {
-            const db = firebase.database();
-            const linksRef = db.ref('users/' + userId + '/links');
-            
-            linksRef.on('value', (snapshot) => {
-                const linksList = document.getElementById('linksList');
-                document.getElementById('linksLoading').style.display = 'none';
-                
-                if (!snapshot.exists()) {
-                    linksList.innerHTML = '<p style="text-align: center; color: #666;">لا توجد روابط منشورة</p>';
-                    return;
+        // تحميل بيانات المستخدم
+        function loadUserData() {
+            database.ref('users/' + currentUser.uid).once('value').then((snapshot) => {
+                const userData = snapshot.val();
+                if (userData) {
+                    document.getElementById('userName').textContent = `مرحباً، ${userData.name || userData.displayName || 'مستخدم'}`;
                 }
-
-                const links = snapshot.val();
-                let html = '';
-                
-                Object.keys(links).forEach((linkId) => {
-                    const link = links[linkId];
-                    const pageUrl = `page.html?page=${link.pageName}`;
-                    
-                    html += `
-                        <div class="link-item">
-                            <div class="link-header">
-                                <div class="link-name">${link.pageName}</div>
-                                <div class="link-views">${link.views || 0} 👁️</div>
-                            </div>
-                            <div class="link-url">${pageUrl}</div>
-                            <div class="link-actions">
-                                <button class="copy-btn" onclick="copyToClipboard('${pageUrl}')">نسخ</button>
-                                <button class="view-btn" onclick="viewLinkPage('${pageUrl}')">عرض</button>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                linksList.innerHTML = html;
             });
         }
 
-        async function checkMediaFireUrl() {
-            const url = document.getElementById('mediafireUrl').value.trim();
-            const checkLoading = document.getElementById('checkLoading');
-            const checkResult = document.getElementById('checkResult');
+        // معالج تسجيل الخروج
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            auth.signOut().then(() => {
+                window.location.href = 'google.html';
+            });
+        });
 
-            if (!url) {
-                alert('يرجى إدخال رابط');
+        // معالج إرسال النموذج
+        document.getElementById('linkForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const mediafireLink = document.getElementById('mediafireLink').value.trim();
+            const messageDiv = document.getElementById('message');
+            const loadingDiv = document.getElementById('loading');
+            
+            if (!mediafireLink) {
+                messageDiv.textContent = 'يرجى إدخال رابط MediaFire';
                 return;
             }
-
-            checkLoading.style.display = 'block';
-            checkResult.style.display = 'none';
-
+            
+            // التحقق من صحة الرابط
+            if (!mediafireLink.includes('mediafire.com')) {
+                messageDiv.textContent = 'يرجى إدخال رابط MediaFire صحيح';
+                return;
+            }
+            
+            messageDiv.textContent = '';
+            loadingDiv.style.display = 'block';
+            
             try {
-                const apiUrl = `https://script.google.com/macros/s/AKfycbzlpPlYUeDgsaq0Gb6A6Yxj78E0E7LZbQ3en6hIhIvPrax1URjCeIZ2ptV1mrYlYahC5w/exec?url=${encodeURIComponent(url)}`;
+                // فحص الرابط باستخدام API
+                const apiUrl = `https://script.google.com/macros/s/AKfycbzlpPlYUeDgsaq0Gb6A6Yxj78E0E7LZbQ3en6hIhIvPrax1URjCeIZ2ptV1mrYlYahC5w/exec?url=${encodeURIComponent(mediafireLink)}`;
                 const response = await fetch(apiUrl);
                 const result = await response.text();
-
+                
                 if (result.includes('发生错误，请联系开发者 KIMO')) {
-                    checkResult.className = 'result error';
-                    checkResult.innerHTML = '❌ الرابط غير صالح';
+                    messageDiv.textContent = 'رابط MediaFire غير صالح';
                 } else {
-                    checkResult.className = 'result success';
-                    checkResult.innerHTML = `
-                        ✅ الرابط صالح
-                        <button onclick="createLinkPage('${url}')" style="margin-top: 10px;">إنشاء صفحة تحميل</button>
-                    `;
+                    // إنشاء صفحة جديدة
+                    await createNewPage(mediafireLink, result);
+                    messageDiv.textContent = 'تم إنشاء الصفحة بنجاح!';
+                    document.getElementById('mediafireLink').value = '';
                 }
-                checkResult.style.display = 'block';
             } catch (error) {
-                checkResult.className = 'result error';
-                checkResult.innerHTML = '❌ خطأ في الاتصال';
-                checkResult.style.display = 'block';
+                messageDiv.textContent = 'حدث خطأ أثناء فحص الرابط: ' + error.message;
+                console.error('Error:', error);
             } finally {
-                checkLoading.style.display = 'none';
+                loadingDiv.style.display = 'none';
             }
-        }
+        });
 
-        function createLinkPage(mediafireUrl) {
-            const db = firebase.database();
-            const userLinksRef = db.ref('users/' + currentUser.uid + '/links');
-            const linkId = Date.now().toString();
-            const pageName = userName + '-' + Math.random().toString(36).substring(2, 6);
-            const pageUrl = `page.html?page=${pageName}`;
+        // دالة إنشاء صفحة جديدة
+        async function createNewPage(mediafireLink, directLink) {
+            const user = auth.currentUser;
+            const userData = await database.ref('users/' + user.uid).once('value');
+            const userName = userData.val().name || userData.val().displayName || 'مستخدم';
             
-            userLinksRef.child(linkId).set({
-                originalUrl: mediafireUrl,
-                pageName: pageName,
-                pageUrl: pageUrl,
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                views: 0
-            })
-            .then(() => {
-                document.getElementById('checkResult').innerHTML = `
-                    ✅ تم إنشاء الصفحة
-                    <p style="margin: 10px 0; font-size: 14px;">${pageUrl}</p>
-                    <button onclick="copyToClipboard('${pageUrl}')">نسخ الرابط</button>
-                    <button onclick="viewLinkPage('${pageUrl}')">عرض الصفحة</button>
-                `;
-                document.getElementById('mediafireUrl').value = '';
+            // تنظيف الاسم لإزالة المسافات
+            const cleanName = userName.replace(/\s+/g, '');
+            
+            // إنشاء رمز عشوائي للصفحة
+            const randomCode = Math.random().toString(36).substring(2, 10);
+            const pageSlug = `${cleanName}-${randomCode}`;
+            
+            // بيانات الصفحة
+            const pageData = {
+                original_mediafire: mediafireLink,
+                direct_link: directLink,
+                page_link: `${window.location.origin}/page.html?slug=${pageSlug}`,
+                page_slug: pageSlug,
+                views: 0,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            // حفظ في قاعدة البيانات تحت المستخدم
+            const userPageRef = database.ref('users/' + user.uid + '/links').push();
+            await userPageRef.set(pageData);
+            
+            // حفظ في قسم الصفحات العام
+            await database.ref('pages/' + pageSlug).set({
+                owner: user.uid,
+                ownerName: userName,
+                ...pageData
             });
+            
+            return pageSlug;
         }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text)
-                .then(() => alert('تم النسخ'));
-        }
-
-        function viewLinkPage(url) {
-            window.open(url, '_blank');
-        }
-
-        function signOut() {
-            firebase.auth().signOut()
-                .then(() => {
-                    window.location.href = 'google.html';
+        // دالة تحميل صفحات المستخدم
+        function loadUserPages() {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            database.ref('users/' + user.uid + '/links').on('value', (snapshot) => {
+                const linksContainer = document.getElementById('userLinks');
+                linksContainer.innerHTML = '';
+                
+                if (!snapshot.exists()) {
+                    linksContainer.innerHTML = '<p>لم تقم بإنشاء أي صفحات بعد</p>';
+                    return;
+                }
+                
+                const links = snapshot.val();
+                Object.keys(links).forEach(key => {
+                    const link = links[key];
+                    const linkElement = document.createElement('div');
+                    linkElement.className = 'link-item';
+                    linkElement.innerHTML = `
+                        <h3>${link.page_slug}</h3>
+                        <p><strong>رابط الصفحة:</strong> <a href="${link.page_link}" target="_blank">${link.page_link}</a></p>
+                        <p><strong>الرابط الأصلي:</strong> ${link.original_mediafire}</p>
+                        <p><strong>عدد الزيارات:</strong> ${link.views}</p>
+                        <a href="${link.page_link}" target="_blank" class="btn-secondary">فتح الصفحة</a>
+                    `;
+                    linksContainer.appendChild(linkElement);
                 });
+            });
         }
     </script>
 </body>
