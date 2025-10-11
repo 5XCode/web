@@ -3,184 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-            backdrop-filter: blur(10px);
-        }
-        .logo {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-        .google-btn {
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 0 auto;
-            width: 100%;
-        }
-        .google-btn:hover {
-            background: #357ae8;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
-        }
-        .loading {
-            display: none;
-            margin-top: 20px;
-        }
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4285f4;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .banned-message {
-            background: #fee;
-            color: #c53030;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #feb2b2;
-            display: none;
-        }
-    </style>
+    <title>تسجيل الدخول - نظام التحميل</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
 </head>
 <body>
     <div class="container">
-        <div class="logo">📥</div>
-        <h1>مرحباً بك!</h1>
-        <p class="subtitle">سجل الدخول لإنشاء روابط تحميل مباشرة لملفاتك من MediaFire</p>
-        
-        <div class="banned-message" id="bannedMessage">
-            <strong>❌ تم حظر حسابك</strong>
-            <p style="margin: 5px 0 0 0; font-size: 14px;">لمخالفة قواعد الاستخدام</p>
-        </div>
-        
-        <button class="google-btn" onclick="signInWithGoogle()">
-            <span>🔐</span>
-            تسجيل الدخول بـ Google
-        </button>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>جاري التحقق...</p>
+        <div class="card">
+            <h1>تسجيل الدخول</h1>
+            <p>سجل الدخول باستخدام حساب Google للمتابعة</p>
+            <div id="googleSignIn" class="google-btn">
+                <span>تسجيل الدخول بـ Google</span>
+            </div>
+            <div id="message" class="message"></div>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBzB4Hky2iO8FGe_sRz3EfjAfyy4ClgLGQ",
-            authDomain: "marvel-75d8b.firebaseapp.com",
-            databaseURL: "https://marvel-75d8b-default-rtdb.firebaseio.com",
-            projectId: "marvel-75d8b",
-            storageBucket: "marvel-75d8b.firebasestorage.app",
-            messagingSenderId: "1098663412275",
-            appId: "1:1098663412275:android:5cdc145765a20130189946"
-        };
+        // تهيئة موفر Google
+        const provider = new firebase.auth.GoogleAuthProvider();
+        
+        // معالج تسجيل الدخول
+        document.getElementById('googleSignIn').addEventListener('click', () => {
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    const user = result.user;
+                    
+                    // حفظ بيانات المستخدم في قاعدة البيانات
+                    database.ref('users/' + user.uid).set({
+                        email: user.email,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    }).then(() => {
+                        // الانتقال إلى صفحة إدخال الاسم
+                        window.location.href = 'name.html';
+                    });
+                })
+                .catch((error) => {
+                    document.getElementById('message').textContent = 'حدث خطأ أثناء التسجيل: ' + error.message;
+                    console.error('Error:', error);
+                });
+        });
 
-        firebase.initializeApp(firebaseConfig);
-
-        async function checkIfBanned(userId) {
-            const db = firebase.database();
-            try {
-                const snapshot = await db.ref('users/' + userId).once('value');
-                return snapshot.exists() && snapshot.val().banned === true;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        async function signInWithGoogle() {
-            const loading = document.getElementById('loading');
-            const btn = document.querySelector('.google-btn');
-            
-            loading.style.display = 'block';
-            btn.style.display = 'none';
-
-            try {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                const result = await firebase.auth().signInWithPopup(provider);
-                const user = result.user;
-
-                const isBanned = await checkIfBanned(user.uid);
-                if (isBanned) {
-                    document.getElementById('bannedMessage').style.display = 'block';
-                    loading.style.display = 'none';
-                    await firebase.auth().signOut();
-                    return;
-                }
-
-                setTimeout(() => {
-                    window.location.href = 'name.html';
-                }, 1000);
-
-            } catch (error) {
-                alert('خطأ في التسجيل: ' + error.message);
-                loading.style.display = 'none';
-                btn.style.display = 'flex';
-            }
-        }
-
-        firebase.auth().onAuthStateChanged(async (user) => {
+        // التحقق إذا كان المستخدم مسجل الدخول بالفعل
+        auth.onAuthStateChanged((user) => {
             if (user) {
-                const isBanned = await checkIfBanned(user.uid);
-                if (isBanned) {
-                    document.getElementById('bannedMessage').style.display = 'block';
-                    await firebase.auth().signOut();
-                } else {
-                    window.location.href = 'name.html';
-                }
+                window.location.href = 'name.html';
             }
         });
     </script>
