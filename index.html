@@ -111,6 +111,11 @@
             word-break: break-all;
             margin-bottom: 10px;
         }
+        .link-date {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
         .link-actions button {
             width: auto;
             padding: 5px 10px;
@@ -123,6 +128,19 @@
             text-align: center;
             color: #666;
             margin: 20px 0;
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -140,7 +158,10 @@
         <input type="url" id="mediafireUrl" placeholder="https://www.mediafire.com/...">
         <button onclick="checkMediaFireUrl()">فحص الرابط</button>
         
-        <div class="loading" id="checkLoading" style="display: none;">جاري الفحص...</div>
+        <div class="loading" id="checkLoading" style="display: none;">
+            <div class="loading-spinner"></div>
+            جاري فحص الرابط...
+        </div>
         
         <div class="result" id="checkResult"></div>
     </div>
@@ -148,7 +169,10 @@
     <div class="card">
         <h3>روابطي المنشورة</h3>
         <div id="linksList">
-            <div class="loading" id="linksLoading">جاري تحميل الروابط...</div>
+            <div class="loading" id="linksLoading">
+                <div class="loading-spinner"></div>
+                جاري تحميل الروابط...
+            </div>
         </div>
     </div>
 
@@ -167,6 +191,9 @@
 
         let currentUser = null;
         let userName = '';
+
+        // إظهار شاشة التحميل
+        document.getElementById('linksLoading').style.display = 'block';
 
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
@@ -211,7 +238,8 @@
                 
                 Object.keys(links).forEach((linkId) => {
                     const link = links[linkId];
-                    const pageUrl = `page.html?page=${link.pageName}`;
+                    const fullPageUrl = window.location.origin + '/page.html?page=' + link.pageName;
+                    const createDate = link.createdAt ? formatDate(link.createdAt) : 'غير معروف';
                     
                     html += `
                         <div class="link-item">
@@ -219,10 +247,11 @@
                                 <div class="link-name">${link.pageName}</div>
                                 <div class="link-views">${link.views || 0} 👁️</div>
                             </div>
-                            <div class="link-url">${pageUrl}</div>
+                            <div class="link-url">${fullPageUrl}</div>
+                            <div class="link-date">⏰ ${createDate}</div>
                             <div class="link-actions">
-                                <button class="copy-btn" onclick="copyToClipboard('${pageUrl}')">نسخ</button>
-                                <button class="view-btn" onclick="viewLinkPage('${pageUrl}')">عرض</button>
+                                <button class="copy-btn" onclick="copyToClipboard('${fullPageUrl}')">نسخ الرابط</button>
+                                <button class="view-btn" onclick="viewLinkPage('${fullPageUrl}')">عرض الصفحة</button>
                             </div>
                         </div>
                     `;
@@ -230,6 +259,27 @@
                 
                 linksList.innerHTML = html;
             });
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) {
+                return 'Today at ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            } else if (diffDays === 2) {
+                return 'Yesterday at ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            } else {
+                return date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
         }
 
         async function checkMediaFireUrl() {
@@ -275,21 +325,21 @@
             const userLinksRef = db.ref('users/' + currentUser.uid + '/links');
             const linkId = Date.now().toString();
             const pageName = userName + '-' + Math.random().toString(36).substring(2, 6);
-            const pageUrl = `page.html?page=${pageName}`;
+            const fullPageUrl = window.location.origin + '/page.html?page=' + pageName;
             
             userLinksRef.child(linkId).set({
                 originalUrl: mediafireUrl,
                 pageName: pageName,
-                pageUrl: pageUrl,
+                pageUrl: fullPageUrl,
                 createdAt: firebase.database.ServerValue.TIMESTAMP,
                 views: 0
             })
             .then(() => {
                 document.getElementById('checkResult').innerHTML = `
                     ✅ تم إنشاء الصفحة
-                    <p style="margin: 10px 0; font-size: 14px;">${pageUrl}</p>
-                    <button onclick="copyToClipboard('${pageUrl}')">نسخ الرابط</button>
-                    <button onclick="viewLinkPage('${pageUrl}')">عرض الصفحة</button>
+                    <p style="margin: 10px 0; font-size: 14px; background: #f8f9fa; padding: 10px; border-radius: 5px;">${fullPageUrl}</p>
+                    <button onclick="copyToClipboard('${fullPageUrl}')">نسخ الرابط</button>
+                    <button onclick="viewLinkPage('${fullPageUrl}')">عرض الصفحة</button>
                 `;
                 document.getElementById('mediafireUrl').value = '';
             });
@@ -297,7 +347,7 @@
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text)
-                .then(() => alert('تم النسخ'));
+                .then(() => alert('تم نسخ الرابط إلى الحافظة'));
         }
 
         function viewLinkPage(url) {
